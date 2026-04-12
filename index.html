@@ -1,88 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kendo Hit Counter Pro</title>
+    <title>Kendo Hit Counter</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
-        h1 { color: #bb86fc; font-size: 28px; margin-top: 10px; }
-        #count { font-size: 200px; font-weight: bold; color: #03dac6; margin: 10px 0; text-shadow: 0 0 20px rgba(3, 218, 198, 0.3); }
-        .controls { display: flex; flex-direction: column; gap: 20px; align-items: center; margin-top: 20px; }
-        button { padding: 18px 40px; font-size: 22px; cursor: pointer; border-radius: 12px; border: none; font-weight: bold; width: 85%; transition: 0.3s; }
-        .btn-start { background: #6200ee; color: white; box-shadow: 0 4px 15px rgba(98, 0, 238, 0.3); }
-        .btn-start:active { transform: scale(0.98); background: #3700b3; }
-        .btn-reset { background: #cf6679; color: black; margin-top: 10px; }
-        .slider-container { width: 85%; background: #1e1e1e; padding: 20px; border-radius: 20px; box-sizing: border-box; border: 1px solid #333; }
-        input[type=range] { width: 100%; height: 10px; border-radius: 5px; background: #333; outline: none; -webkit-appearance: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 25px; height: 25px; border-radius: 50%; background: #03dac6; cursor: pointer; }
-        .label-text { font-size: 16px; color: #aaa; margin-bottom: 10px; display: block; }
-        #sensVal { color: #03dac6; font-weight: bold; }
+        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; padding-top: 50px; }
+        #count { font-size: 150px; font-weight: bold; margin: 20px 0; color: #00ff88; }
+        #status { font-size: 18px; color: #888; }
+        button { padding: 20px 40px; font-size: 24px; cursor: pointer; border-radius: 15px; border: none; background: #6200ee; color: white; font-weight: bold; }
+        .meter-container { width: 80%; height: 25px; background: #333; margin: 30px auto; border-radius: 12px; overflow: hidden; }
+        #meter { width: 0%; height: 100%; background: #00ff88; transition: width 0.1s; }
     </style>
 </head>
 <body>
-    <h1>Kendo Hit Counter</h1>
+    <h1>Hit Counter</h1>
+    <div id="status">Press the button to start</div>
+    <div class="meter-container"><div id="meter"></div></div>
     <div id="count">0</div>
-
-    <div class="controls">
-        <button class="btn-start" id="startBtn" onclick="init()">START LISTENING</button>
-        
-        <div class="slider-container">
-            <span class="label-text">Sensitivity: <span id="sensVal">55</span></span>
-            <input type="range" id="sensitivity" min="10" max="100" value="55" oninput="updateSens(this.value)">
-            <p style="font-size: 13px; color: #666; margin-top: 10px;">Lower = More Sensitive | Higher = Loud Noises Only</p>
-        </div>
-
-        <button class="btn-reset" onclick="resetCount()">RESET SCORE</button>
-    </div>
+    <button onclick="startApp()">START PRACTICE</button>
 
     <script>
         let count = 0;
-        let lastHitTime = 0;
-        let threshold = 55;
-        let isRunning = false;
+        let isThrottled = false; 
+        const THRESHOLD = 50; // You can change this number (30-70) if it's too sensitive or not enough
 
-        function updateSens(val) {
-            threshold = parseInt(val);
-            document.getElementById('sensVal').innerText = val;
-        }
-
-        function resetCount() {
-            count = 0;
-            document.getElementById('count').innerText = count;
-        }
-
-        async function init() {
-            if(isRunning) return;
+        async function startApp() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const audioContext = new AudioContext();
-                const source = audioContext.createMediaStreamSource(stream);
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                
                 analyser.fftSize = 256;
-                source.connect(analyser);
+                microphone.connect(analyser);
+                
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                document.getElementById('status').innerText = "Listening... Hit the tire!";
 
-                const data = new Uint8Array(analyser.frequencyBinCount);
-                isRunning = true;
-                document.getElementById('startBtn').innerText = "LISTENING...";
-                document.getElementById('startBtn').style.background = "#333";
-                document.getElementById('startBtn').style.color = "#666";
+                function checkAudio() {
+                    analyser.getByteFrequencyData(dataArray);
+                    let volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                    
+                    document.getElementById('meter').style.width = Math.min(volume * 2, 100) + "%";
 
-                function detect() {
-                    analyser.getByteFrequencyData(data);
-                    const volume = data.reduce((a, b) => a + b) / data.length;
-
-                    // If volume hits peak and more than 300ms passed since last hit
-                    if (volume > threshold && Date.now() - lastHitTime > 300) {
+                    if (volume > THRESHOLD && !isThrottled) {
                         count++;
                         document.getElementById('count').innerText = count;
-                        lastHitTime = Date.now();
+                        
+                        isThrottled = true;
+                        setTimeout(() => { isThrottled = false; }, 300); 
                     }
-                    requestAnimationFrame(detect);
+                    requestAnimationFrame(checkAudio);
                 }
-                detect();
+                checkAudio();
             } catch (err) {
-                alert("Microphone access denied. Please allow mic permissions in your browser settings.");
+                alert("Microphone access required: " + err);
             }
         }
     </script>
