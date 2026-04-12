@@ -1,66 +1,9 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>검도 타격 카운터</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; padding-top: 50px; }
-        #count { font-size: 120px; font-weight: bold; margin: 20px 0; color: #00ff88; }
-        #status { font-size: 18px; color: #888; }
-        button { padding: 15px 30px; font-size: 20px; cursor: pointer; border-radius: 10px; border: none; background: #007bff; color: white; }
-        .meter-container { width: 80%; height: 20px; background: #333; margin: 20px auto; border-radius: 10px; overflow: hidden; }
-        #meter { width: 0%; height: 100%; background: #00ff88; transition: width 0.1s; }
-    </style>
-</head>
-<body>
-    <h1>후리기 카운터</h1>
-    <div id="status">마이크 시작 버튼을 눌러주세요</div>
-    <div class="meter-container"><div id="meter"></div></div>
-    <div id="count">0</div>
-    <button onclick="startApp()">연습 시작</button>
-
-    <script>
-        let count = 0;
-        let isThrottled = false; // 중복 카운트 방지용 (데드타임)
-        const THRESHOLD = 50;    // 타격 인식 감도 (낮을수록 민감, 소음 환경에 따라 조절)
-
-        async function startApp() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const analyser = audioContext.createAnalyser();
-                const microphone = audioContext.createMediaStreamSource(stream);
-                
-                analyser.fftSize = 256;
-                microphone.connect(analyser);
-                
-                const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                document.getElementById('status').innerText = "측정 중... 타이어를 치세요!";
-
-                function checkAudio() {
-                    analyser.getByteFrequencyData(dataArray);
-                    let volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                    
-                    // 시각적 미터 업데이트
-                    document.getElementById('meter').style.width = Math.min(volume * 2, 100) + "%";
-
-                    // 임계값 넘고 + 0.3초 이내에 다시 카운트하지 않음
-                    if (volume > THRESHOLD && !isThrottled) {
-                        count++;
-                        document.getElementById('count').innerText = count;
-                        
-                        // 데드타임 설정 (연속 타격 방지)
-                        isThrottled = true;
-                        setTimeout(() => { isThrottled = false; }, 300); 
-                    }
-                    requestAnimationFrame(checkAudio);
-                }
-                checkAudio();
-            } catch (err) {
-                alert("마이크 권한이 필요합니다: " + err);
-            }
-        }
-    </script>
-</body>
-</html>
+# 앱이 실행되는 동안 반복
+while recording:
+    current_volume = get_microphone_volume() # 현재 소리 크기 측정
+    
+    # 설정한 기준보다 소리가 크고, 마지막 타격 후 0.3초가 지났다면
+    if current_volume > threshold and time_since_last_hit > 0.3:
+        count += 1
+        update_screen(count) # 화면에 숫자 표시
+        last_hit_time = current_time # 마지막 타격 시간 업데이트
