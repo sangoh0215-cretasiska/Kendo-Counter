@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>검도 타격 카운터</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #222; color: white; }
+        #count { font-size: 150px; color: #0f0; margin: 40px 0; }
+        button { padding: 20px 40px; font-size: 24px; background: #007bff; color: white; border: none; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <h1>후리기 카운터</h1>
+    <div id="count">0</div>
+    <button onclick="init()">마이크 시작</button>
+
+    <script>
+        let count = 0;
+        let lastHitTime = 0;
+        const threshold = 55; // 감도 조절용
+
+        async function init() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioContext = new AudioContext();
+            const source = audioContext.createMediaStreamSource(stream);
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            function detect() {
+                analyser.getByteFrequencyData(data);
+                const volume = data.reduce((a, b) => a + b) / data.length;
+
+                if (volume > threshold && Date.now() - lastHitTime > 300) {
+                    count++;
+                    document.getElementById('count').innerText = count;
+                    lastHitTime = Date.now();
+                }
+                requestAnimationFrame(detect);
+            }
+            detect();
+        }
+    </script>
+</body>
+</html>
