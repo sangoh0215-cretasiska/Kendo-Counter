@@ -1,29 +1,52 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>검도 타격 카운터</title>
+    <title>Kendo Hit Counter</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #1a1a1a; color: white; padding-top: 50px; }
-        #count { font-size: 120px; font-weight: bold; margin: 20px 0; color: #00ff88; }
-        #status { font-size: 18px; color: #888; }
-        button { padding: 15px 30px; font-size: 20px; cursor: pointer; border-radius: 10px; border: none; background: #007bff; color: white; }
-        .meter-container { width: 80%; height: 20px; background: #333; margin: 20px auto; border-radius: 10px; overflow: hidden; }
-        #meter { width: 0%; height: 100%; background: #00ff88; transition: width 0.1s; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #121212; color: white; padding-top: 40px; margin: 0; }
+        h1 { color: #bb86fc; font-size: 24px; letter-spacing: 1px; }
+        #status { font-size: 16px; color: #888; margin-bottom: 5px; }
+        #count { font-size: 160px; font-weight: bold; margin: 10px 0; color: #03dac6; text-shadow: 0 0 20px rgba(3, 218, 198, 0.2); }
+        
+        /* Sound Meter */
+        .meter-container { width: 85%; height: 15px; background: #333; margin: 20px auto; border-radius: 10px; overflow: hidden; border: 1px solid #444; }
+        #meter { width: 0%; height: 100%; background: linear-gradient(90deg, #03dac6, #00ff88); transition: width 0.1s; }
+        
+        .button-group { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 20px; }
+        
+        button { padding: 18px 40px; font-size: 22px; cursor: pointer; border-radius: 50px; border: none; font-weight: bold; width: 80%; transition: 0.2s; }
+        .btn-start { background: #6200ee; color: white; box-shadow: 0 4px 15px rgba(98, 0, 238, 0.4); }
+        .btn-reset { background: #333; color: #cf6679; border: 1px solid #cf6679; font-size: 18px; padding: 12px 30px; margin-top: 10px; }
+        
+        button:active { transform: scale(0.96); opacity: 0.8; }
     </style>
 </head>
 <body>
-    <h1>후리기 카운터</h1>
-    <div id="status">마이크 시작 버튼을 눌러주세요</div>
-    <div class="meter-container"><div id="meter"></div></div>
+    <h1>KENDO HIT COUNTER</h1>
+    <div id="status">Tap the button to start</div>
+    
+    <div class="meter-container">
+        <div id="meter"></div>
+    </div>
+    
     <div id="count">0</div>
-    <button onclick="startApp()">연습 시작</button>
+    
+    <div class="button-group">
+        <button class="btn-start" id="mainBtn" onclick="startApp()">START PRACTICE</button>
+        <button class="btn-reset" onclick="resetCount()">RESET SCORE</button>
+    </div>
 
     <script>
         let count = 0;
-        let isThrottled = false; // 중복 카운트 방지용 (데드타임)
-        const THRESHOLD = 50;    // 타격 인식 감도 (낮을수록 민감, 소음 환경에 따라 조절)
+        let isThrottled = false; 
+        const THRESHOLD = 50; // Sensitivity (Adjust between 30-70 if needed)
+
+        function resetCount() {
+            count = 0;
+            document.getElementById('count').innerText = count;
+        }
 
         async function startApp() {
             try {
@@ -36,31 +59,21 @@
                 microphone.connect(analyser);
                 
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                document.getElementById('status').innerText = "측정 중... 타이어를 치세요!";
+                
+                // Update UI State
+                document.getElementById('status').innerText = "LISTENING... HIT THE TIRE!";
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.innerText = "RUNNING";
+                mainBtn.style.background = "#222";
+                mainBtn.style.color = "#555";
+                mainBtn.disabled = true;
 
                 function checkAudio() {
                     analyser.getByteFrequencyData(dataArray);
                     let volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
                     
-                    // 시각적 미터 업데이트
+                    // Visual Meter Update
                     document.getElementById('meter').style.width = Math.min(volume * 2, 100) + "%";
 
-                    // 임계값 넘고 + 0.3초 이내에 다시 카운트하지 않음
-                    if (volume > THRESHOLD && !isThrottled) {
-                        count++;
-                        document.getElementById('count').innerText = count;
-                        
-                        // 데드타임 설정 (연속 타격 방지)
-                        isThrottled = true;
-                        setTimeout(() => { isThrottled = false; }, 300); 
-                    }
-                    requestAnimationFrame(checkAudio);
-                }
-                checkAudio();
-            } catch (err) {
-                alert("마이크 권한이 필요합니다: " + err);
-            }
-        }
-    </script>
-</body>
-</html>
+                    // Detection Logic
+                    if (volume > THRESHOLD
