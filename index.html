@@ -2,143 +2,115 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hit Counter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Kendo Counter">
+
+    <title>Kendo Hit Counter Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #000; color: #fff; margin: 0; padding: 20px; overflow: hidden; }
-        h1 { color: #bb86fc; font-size: 22px; margin-bottom: 5px; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            text-align: center; 
+            background: #000000; 
+            color: white; 
+            padding-top: env(safe-area-inset-top); /* 아이폰 노치 디자인 대응 */
+            margin: 0; 
+            overflow: hidden; /* 스크롤 방지 */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        h1 { color: #A066FF; font-size: 24px; font-weight: bold; margin: 10px 0; }
+        #count { font-size: 180px; font-weight: bold; color: #00FFCC; text-shadow: 0 0 20px rgba(0, 255, 204, 0.4); margin: 0; }
         
-        /* Main Counter Display */
-        #count { font-size: 200px; font-weight: bold; color: #03dac6; margin: 0; line-height: 1; }
+        .meter-container { width: 85%; height: 12px; background: #222; margin: 15px auto; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        #meter { width: 0%; height: 100%; background: linear-gradient(90deg, #00FFCC, #00FF88); }
         
-        /* Sound Level Meter */
-        .meter-box { width: 90%; height: 12px; background: #222; margin: 20px auto; border-radius: 6px; overflow: hidden; border: 1px solid #444; }
-        #meter-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #03dac6, #f44336); transition: width 0.05s; }
+        .control-panel { background: #1a1a1a; width: 90%; margin: 0 auto; padding: 20px 15px; border-radius: 25px; border: 1px solid #333; }
+        .label-text { color: #FFA500; font-weight: bold; margin-bottom: 5px; display: block; font-size: 14px; }
+        input[type=range] { width: 90%; margin: 10px 0; accent-color: #007BFF; }
 
-        .control-panel { background: #1a1a1a; padding: 20px; border-radius: 20px; width: 90%; margin: 10px auto; box-sizing: border-box; }
+        .button-group { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 15px; }
+        button { padding: 16px 40px; font-size: 20px; cursor: pointer; border-radius: 15px; border: none; font-weight: bold; width: 90%; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
+        .btn-start { background: #6200EE !important; color: white !important; box-shadow: 0 4px 15px rgba(98, 0, 238, 0.5); }
+        .btn-reset { background: #2a2a2a; color: #FF6B6B; border: 1px solid #444; font-size: 16px; }
         
-        /* Sensitivity Slider */
-        .slider-group { margin-bottom: 25px; }
-        label { display: block; color: #888; margin-bottom: 10px; font-size: 14px; }
-        input[type=range] { width: 100%; cursor: pointer; }
-        #threshold-val { color: #ff9800; font-weight: bold; font-size: 18px; }
-
-        /* Buttons */
-        .btn-group { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        button { padding: 18px; font-size: 20px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #start-btn { background: #6200ee; color: #fff; box-shadow: 0 4px 10px rgba(98,0,238,0.3); }
-        #reset-btn { background: #333; color: #cf6679; border: 1px solid #cf6679; }
-        button:active { transform: scale(0.97); opacity: 0.8; }
-        
-        .status-msg { font-size: 13px; color: #555; margin-top: 10px; }
+        button:active { transform: scale(0.96); opacity: 0.9; }
+        #status { color: #555; font-size: 11px; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-    <h1>HIT COUNTER</h1>
-    
+    <h1>KENDO HIT COUNTER</h1>
     <div id="count">0</div>
-
-    <div class="meter-box">
-        <div id="meter-bar"></div>
+    
+    <div class="meter-container">
+        <div id="meter"></div>
     </div>
-
+    
     <div class="control-panel">
-        <div class="slider-group">
-            <label>Sensitivity (Threshold): <span id="threshold-val">50</span> dB</label>
-            <input type="range" id="threshold-slider" min="10" max="100" value="50">
-            <p style="font-size: 11px; color: #555; margin-top:5px;">Lower = More Sensitive | Higher = Only Loud Hits</p>
+        <span class="label-text">Sensitivity: <span id="sensVal" style="color:#FFA500">50</span></span>
+        <input type="range" id="sensitivity" min="10" max="100" value="50" oninput="updateSens(this.value)">
+        
+        <div class="button-group">
+            <button class="btn-start" id="mainBtn" onclick="startApp()">START PRACTICE</button>
+            <button class="btn-reset" onclick="resetCount()">RESET SCORE</button>
         </div>
-
-        <div class="btn-group">
-            <button id="start-btn">START PRACTICE</button>
-            <button id="reset-btn">RESET SCORE</button>
-        </div>
-        <div class="status-msg" id="status-text">Mic Access Required</div>
+        <div id="status">Mic Access Required</div>
     </div>
 
     <script>
-        let counter = 0;
-        let isListening = false;
-        let lastHitTime = 0;
-        const cooldown = 300; // 0.3 seconds dead-time
-        
-        const countDisplay = document.getElementById('count');
-        const startBtn = document.getElementById('start-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const thresholdSlider = document.getElementById('threshold-slider');
-        const thresholdVal = document.getElementById('threshold-val');
-        const meterBar = document.getElementById('meter-bar');
-        const statusText = document.getElementById('status-text');
+        let count = 0;
+        let isThrottled = false; 
+        let threshold = 50;
 
-        // Update threshold display
-        thresholdSlider.oninput = function() {
-            thresholdVal.innerText = this.value;
-        };
+        function updateSens(val) {
+            threshold = parseInt(val);
+            document.getElementById('sensVal').innerText = val;
+        }
 
-        resetBtn.onclick = function() {
-            counter = 0;
-            countDisplay.innerText = "0";
-        };
+        function resetCount() {
+            count = 0;
+            document.getElementById('count').innerText = count;
+        }
 
-        startBtn.onclick = async function() {
-            if (isListening) return;
-
+        async function startApp() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const analyser = audioContext.createAnalyser();
-                const source = audioContext.createMediaStreamSource(stream);
-
+                const microphone = audioContext.createMediaStreamSource(stream);
                 analyser.fftSize = 256;
-                source.connect(analyser);
+                microphone.connect(analyser);
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                document.getElementById('status').innerText = "LISTENING... GO!";
+                const mainBtn = document.getElementById('mainBtn');
+                mainBtn.innerText = "RUNNING...";
+                mainBtn.style.background = "#333";
+                mainBtn.disabled = true;
 
-                const bufferLength = analyser.frequencyBinCount;
-                const dataArray = new Uint8Array(bufferLength);
-
-                isListening = true;
-                startBtn.innerText = "LISTENING...";
-                startBtn.style.background = "#222";
-                startBtn.style.color = "#555";
-                statusText.innerText = "Mic Active - Start Practice!";
-
-                function processAudio() {
+                function checkAudio() {
                     analyser.getByteFrequencyData(dataArray);
-                    
-                    // RMS (Root Mean Square) calculation for volume level
-                    let sum = 0;
-                    for(let i=0; i<bufferLength; i++) {
-                        sum += dataArray[i];
+                    let volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                    document.getElementById('meter').style.width = Math.min(volume * 2, 100) + "%";
+
+                    if (volume > threshold && !isThrottled) {
+                        count++;
+                        document.getElementById('count').innerText = count;
+                        isThrottled = true;
+                        setTimeout(() => { isThrottled = false; }, 300); 
                     }
-                    let volume = sum / bufferLength;
-                    
-                    // Update Meter
-                    meterBar.style.width = volume + "%";
-
-                    // Detection Algorithm
-                    let threshold = parseInt(thresholdSlider.value);
-                    let now = Date.now();
-
-                    if (volume > threshold && (now - lastHitTime > cooldown)) {
-                        counter++;
-                        countDisplay.innerText = counter;
-                        lastHitTime = now;
-                        
-                        // Visual feedback on hit
-                        countDisplay.style.color = "#fff";
-                        setTimeout(() => { countDisplay.style.color = "#03dac6"; }, 100);
-                    }
-
-                    requestAnimationFrame(processAudio);
+                    requestAnimationFrame(checkAudio);
                 }
-
-                processAudio();
-
+                checkAudio();
             } catch (err) {
-                alert("Please check microphone permissions in your browser: " + err);
-                statusText.innerText = "Access Denied";
+                alert("Microphone Error: " + err);
             }
-        };
+        }
     </script>
 </body>
 </html>
