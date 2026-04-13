@@ -3,48 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Kendo Counter">
-
     <title>Kendo Hit Counter Pro</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <style>
         body { 
             font-family: 'Segoe UI', sans-serif; 
             text-align: center; 
             background: #000000; 
             color: white; 
-            padding-top: env(safe-area-inset-top); /* 아이폰 노치 디자인 대응 */
             margin: 0; 
-            overflow: hidden; /* 스크롤 방지 */
+            padding: 0;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: center; /* 세로 중앙 정렬 */
         }
+
         h1 { color: #A066FF; font-size: 24px; font-weight: bold; margin: 10px 0; }
-        #count { font-size: 180px; font-weight: bold; color: #00FFCC; text-shadow: 0 0 20px rgba(0, 255, 204, 0.4); margin: 0; }
+        #count { font-size: 220px; font-weight: bold; margin: -10px 0; color: #00FFCC; line-height: 1; }
         
-        .meter-container { width: 85%; height: 12px; background: #222; margin: 15px auto; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        .meter-container { width: 85%; height: 14px; background: #222; margin: 20px auto; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
         #meter { width: 0%; height: 100%; background: linear-gradient(90deg, #00FFCC, #00FF88); }
         
-        .control-panel { background: #1a1a1a; width: 90%; margin: 0 auto; padding: 20px 15px; border-radius: 25px; border: 1px solid #333; }
-        .label-text { color: #FFA500; font-weight: bold; margin-bottom: 5px; display: block; font-size: 14px; }
-        input[type=range] { width: 90%; margin: 10px 0; accent-color: #007BFF; }
-
-        .button-group { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 15px; }
-        button { padding: 16px 40px; font-size: 20px; cursor: pointer; border-radius: 15px; border: none; font-weight: bold; width: 90%; transition: 0.2s; -webkit-tap-highlight-color: transparent; }
-        .btn-start { background: #6200EE !important; color: white !important; box-shadow: 0 4px 15px rgba(98, 0, 238, 0.5); }
-        .btn-reset { background: #2a2a2a; color: #FF6B6B; border: 1px solid #444; font-size: 16px; }
+        /* 두 번째 이미지처럼 박스를 더 꽉 차게 조절 */
+        .control-panel { 
+            background: #1a1a1a; 
+            width: 92%; 
+            margin: 0 auto; 
+            padding: 30px 15px; 
+            border-radius: 30px; 
+            border: 1px solid #333;
+            box-sizing: border-box;
+        }
         
-        button:active { transform: scale(0.96); opacity: 0.9; }
-        #status { color: #555; font-size: 11px; margin-top: 10px; }
+        .label-text { color: #FFA500; font-weight: bold; font-size: 16px; margin-bottom: 10px; display: block; }
+        input[type=range] { width: 90%; margin: 15px 0; accent-color: #007BFF; height: 20px; }
+
+        .button-group { display: flex; flex-direction: column; gap: 18px; align-items: center; margin-top: 10px; width: 100%; }
+        
+        button { 
+            padding: 22px 0; 
+            font-size: 24px; 
+            cursor: pointer; 
+            border-radius: 20px; 
+            border: none; 
+            font-weight: bold; 
+            width: 90%; 
+            transition: 0.2s; 
+        }
+        
+        /* 카톡 브라우저의 쨍한 보라색 재현 */
+        .btn-start { background: #7F00FF !important; color: white !important; box-shadow: 0 6px 20px rgba(127, 0, 255, 0.4); }
+        .btn-reset { background: #2d2d2d; color: #FF6B6B; border: 1px solid #444; }
+        
+        button:active { transform: scale(0.95); opacity: 0.9; }
+        .status-text { color: #666; font-size: 13px; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>KENDO HIT COUNTER</h1>
+    <h1>HIT COUNTER</h1>
     <div id="count">0</div>
     
     <div class="meter-container">
@@ -52,14 +71,14 @@
     </div>
     
     <div class="control-panel">
-        <span class="label-text">Sensitivity: <span id="sensVal" style="color:#FFA500">50</span></span>
+        <span class="label-text">Sensitivity (Threshold): <span id="sensVal">50</span> dB</span>
         <input type="range" id="sensitivity" min="10" max="100" value="50" oninput="updateSens(this.value)">
         
         <div class="button-group">
             <button class="btn-start" id="mainBtn" onclick="startApp()">START PRACTICE</button>
             <button class="btn-reset" onclick="resetCount()">RESET SCORE</button>
         </div>
-        <div id="status">Mic Access Required</div>
+        <div id="status" class="status-text">Mic Access Required</div>
     </div>
 
     <script>
@@ -89,8 +108,8 @@
                 
                 document.getElementById('status').innerText = "LISTENING... GO!";
                 const mainBtn = document.getElementById('mainBtn');
-                mainBtn.innerText = "RUNNING...";
-                mainBtn.style.background = "#333";
+                mainBtn.innerText = "RUNNING";
+                mainBtn.style.background = "#444";
                 mainBtn.disabled = true;
 
                 function checkAudio() {
