@@ -3,88 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kendo Hit Counter Pro</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    
+    <title>Kendo Counter Pro</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            text-align: center; 
-            background: #000000; 
-            color: white; 
-            margin: 0; 
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* 세로 중앙 정렬 */
-        }
-
-        h1 { color: #A066FF; font-size: 24px; font-weight: bold; margin: 10px 0; }
-        #count { font-size: 220px; font-weight: bold; margin: -10px 0; color: #00FFCC; line-height: 1; }
-        
-        .meter-container { width: 85%; height: 14px; background: #222; margin: 20px auto; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
-        #meter { width: 0%; height: 100%; background: linear-gradient(90deg, #00FFCC, #00FF88); }
-        
-        /* 두 번째 이미지처럼 박스를 더 꽉 차게 조절 */
-        .control-panel { 
-            background: #1a1a1a; 
-            width: 92%; 
-            margin: 0 auto; 
-            padding: 30px 15px; 
-            border-radius: 30px; 
-            border: 1px solid #333;
-            box-sizing: border-box;
-        }
-        
-        .label-text { color: #FFA500; font-weight: bold; font-size: 16px; margin-bottom: 10px; display: block; }
-        input[type=range] { width: 90%; margin: 15px 0; accent-color: #007BFF; height: 20px; }
-
-        .button-group { display: flex; flex-direction: column; gap: 18px; align-items: center; margin-top: 10px; width: 100%; }
-        
-        button { 
-            padding: 22px 0; 
-            font-size: 24px; 
-            cursor: pointer; 
-            border-radius: 20px; 
-            border: none; 
-            font-weight: bold; 
-            width: 90%; 
-            transition: 0.2s; 
-        }
-        
-        /* 카톡 브라우저의 쨍한 보라색 재현 */
-        .btn-start { background: #7F00FF !important; color: white !important; box-shadow: 0 6px 20px rgba(127, 0, 255, 0.4); }
-        .btn-reset { background: #2d2d2d; color: #FF6B6B; border: 1px solid #444; }
-        
-        button:active { transform: scale(0.95); opacity: 0.9; }
-        .status-text { color: #666; font-size: 13px; margin-top: 15px; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #000; color: white; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; }
+        h1 { color: #A066FF; font-size: 22px; margin: 10px 0; }
+        #count { font-size: 220px; font-weight: bold; color: #00FFCC; line-height: 1; margin: 10px 0; }
+        .meter-container { width: 85%; height: 12px; background: #222; margin: 15px auto; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        #meter { width: 0%; height: 100%; background: #00FFCC; transition: width 0.05s; }
+        .control-panel { background: #1a1a1a; width: 92%; margin: 0 auto; padding: 25px 15px; border-radius: 30px; border: 1px solid #333; box-sizing: border-box; }
+        .label-text { color: #FFA500; font-weight: bold; font-size: 16px; display: block; margin-bottom: 5px; }
+        input[type=range] { width: 90%; margin: 15px 0; accent-color: #007BFF; }
+        .button-group { display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
+        button { padding: 20px 0; font-size: 22px; border-radius: 15px; border: none; font-weight: bold; width: 90%; transition: 0.2s; }
+        .btn-start { background: #7F00FF; color: white; box-shadow: 0 5px 15px rgba(127, 0, 255, 0.4); }
+        .btn-reset { background: #333; color: #FF6B6B; border: 1px solid #444; }
+        .status-text { color: #666; font-size: 12px; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>HIT COUNTER</h1>
+    <h1>KENDO HIT COUNTER</h1>
     <div id="count">0</div>
-    
-    <div class="meter-container">
-        <div id="meter"></div>
-    </div>
-    
+    <div class="meter-container"><div id="meter"></div></div>
     <div class="control-panel">
-        <span class="label-text">Sensitivity (Threshold): <span id="sensVal">50</span> dB</span>
-        <input type="range" id="sensitivity" min="10" max="100" value="50" oninput="updateSens(this.value)">
-        
+        <span class="label-text">Sensitivity: <span id="sensVal">45</span></span>
+        <input type="range" id="sensitivity" min="10" max="100" value="45" oninput="updateSens(this.value)">
         <div class="button-group">
             <button class="btn-start" id="mainBtn" onclick="startApp()">START PRACTICE</button>
             <button class="btn-reset" onclick="resetCount()">RESET SCORE</button>
         </div>
-        <div id="status" class="status-text">Mic Access Required</div>
+        <div id="status" class="status-text">Frequency Filter Active</div>
     </div>
 
     <script>
         let count = 0;
         let isThrottled = false; 
-        let threshold = 50;
+        let threshold = 45;
 
         function updateSens(val) {
             threshold = parseInt(val);
@@ -100,28 +53,45 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 1. 주파수 필터 추가 (BiquadFilter)
+                const filter = audioContext.createBiquadFilter();
+                filter.type = "highpass"; // 고음만 통과시킴
+                filter.frequency.value = 1000; // 1000Hz 이하(발구름 등 저음) 무시
+
+                const source = audioContext.createMediaStreamSource(stream);
                 const analyser = audioContext.createAnalyser();
-                const microphone = audioContext.createMediaStreamSource(stream);
                 analyser.fftSize = 256;
-                microphone.connect(analyser);
+
+                // 마이크 -> 필터 -> 분석기 순서로 연결
+                source.connect(filter);
+                filter.connect(analyser);
+
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 
-                document.getElementById('status').innerText = "LISTENING... GO!";
+                document.getElementById('status').innerText = "FILTERING NOISE... GO!";
                 const mainBtn = document.getElementById('mainBtn');
-                mainBtn.innerText = "RUNNING";
+                mainBtn.innerText = "LISTENING";
                 mainBtn.style.background = "#444";
                 mainBtn.disabled = true;
 
                 function checkAudio() {
                     analyser.getByteFrequencyData(dataArray);
-                    let volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                    document.getElementById('meter').style.width = Math.min(volume * 2, 100) + "%";
+                    // 타이어 소리가 많이 분포된 고주파 영역(800Hz 이상) 위주로 계산
+                    let volume = 0;
+                    for(let i = 10; i < dataArray.length; i++) { // 저음역대 i < 10 구간 무시
+                        volume += dataArray[i];
+                    }
+                    volume = volume / (dataArray.length - 10);
+                    
+                    document.getElementById('meter').style.width = Math.min(volume * 3, 100) + "%";
 
                     if (volume > threshold && !isThrottled) {
                         count++;
                         document.getElementById('count').innerText = count;
                         isThrottled = true;
-                        setTimeout(() => { isThrottled = false; }, 300); 
+                        // 타격 후 0.25초 동안은 다른 소리를 무시 (발구름 방지)
+                        setTimeout(() => { isThrottled = false; }, 250); 
                     }
                     requestAnimationFrame(checkAudio);
                 }
